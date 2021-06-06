@@ -2,7 +2,6 @@ package motion
 
 import (
 	"fmt"
-	"sort"
 )
 
 type Profile []State
@@ -13,14 +12,17 @@ func (p Profile) Duration() float64 {
 }
 
 func (p Profile) State(t float64) State {
-	idx := sort.Search(len(p), func(i int) bool {
-		return p[i].Time() <= t
-	})
+	for i := len(p) - 1; i >= 0; i-- {
+		if t < p[i].t0 {
+			continue
+		}
+		return p[i].Next(t - p[i].t0)
+	}
 
-	return p[idx].Next(t)
+	panic("bad profile")
 }
 
-func (p Profile) Last() State  { return p[len(p)-1] }
+func (p Profile) Last() State  { return p[len(p)-1].clone() }
 func (p Profile) First() State { return p[0] }
 
 type ProfileConfig struct {

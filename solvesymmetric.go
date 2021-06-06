@@ -2,7 +2,6 @@ package motion
 
 import (
 	"errors"
-	"fmt"
 	"math"
 	"time"
 )
@@ -23,34 +22,29 @@ func makeSymmetricBaseValues(src []float64, order int, value float64) []float64 
 
 	src = makeSymmetricBaseValues(src, order-1, value)
 	src = append(src, 0)
-	for _, r := range src {
+	for _, r := range src[:len(src)-1] {
 		src = append(src, -r)
 	}
 
 	return src
 }
 
-func timeFromDuration(dur, unit time.Duration) float64 {
-	return float64(dur/unit) + float64(dur%unit)/float64(unit)
-}
-
-func (cfg ProfileConfig) makeSymmetricTimes(src []float64, order int, times []float64) []float64 {
+func makeSymmetricTimes(src []float64, order int, times []float64) []float64 {
 	if order < 1 {
 		panic("invalid order")
 	}
 	if order == 1 {
-		return append(src[:0], times[len(times)-1])
+		return append(src[:0], times[0])
 	}
 
-	src = cfg.makeSymmetricTimes(src, order-1, times[:len(times)-1])
-	src = append(src, times[len(times)-1])
+	src = makeSymmetricTimes(src, order-1, times[1:])
+	src = append(src, times[0])
 	src = append(src, src[:len(src)-1]...)
 
 	return src
 }
 
 func (cfg ProfileConfig) isValid(p Profile) bool {
-	fmt.Printf("isValid:\n\t%#v\n\t%#v\n", cfg, p)
 	for _, s := range p {
 		if cfg.gt(s.s0[0], cfg.Params[0].Target) {
 			return false
@@ -66,7 +60,6 @@ func (cfg ProfileConfig) isValid(p Profile) bool {
 		}
 	}
 
-	fmt.Println("true", cfg.isExact(p))
 	return true
 }
 func (cfg ProfileConfig) equal(a, b float64) bool {
@@ -105,29 +98,29 @@ func (cfg ProfileConfig) solveSymmetric() (Profile, error) {
 	for _, param := range cfg.Params {
 		p[0].s0 = append(p[0].s0, param.Start)
 	}
-	fmt.Println(cfg.Order())
 
 	for order := 1; order <= cfg.Order(); order++ {
 		base := makeSymmetricBaseValues(base, order, cfg.Params[cfg.Order()].Max)
 
 		calc := func() (bool, interface{}) {
-			timeSlots = cfg.makeSymmetricTimes(timeSlots, order, times)
-			fmt.Println("timeslots", timeSlots)
+			timeSlots = makeSymmetricTimes(timeSlots, order, times)
+
 			p = p[:1]
 			for i, t := range timeSlots {
-				if base[i] != 0 {
-					p[len(p)-1].s0[cfg.Order()] = base[i]
+				if t == 0 {
+					continue
 				}
-				p = append(p, p.Last().Next(p.Last().Time()+t))
+				p[len(p)-1].s0[cfg.Order()] = base[i]
+
+				p = append(p, p.Last().Next(t))
 			}
 
-			p[len(p)-1].s0[cfg.Order()] = 0
+			p[len(p)-1].s0[cfg.Order()] = cfg.Params[cfg.Order()].Target
 
 			return cfg.isValid(p), p.Last()
 		}
 
 		doSearch := func(index int) bool {
-			fmt.Println("doSearch", index)
 			if cfg.Params[index+1].Max == 0 {
 				times[cfg.Order()-index-1] = 0
 				calc()
@@ -136,7 +129,6 @@ func (cfg ProfileConfig) solveSymmetric() (Profile, error) {
 
 			times[index] = cfg.search(times[index], func(v float64) (bool, interface{}) {
 				times[index] = v
-				fmt.Println(index, v)
 				return calc()
 			}, cfg.stateCmp)
 
