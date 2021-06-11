@@ -32,7 +32,7 @@ func (cfg ProfileConfig) search(max float64, check func(float64) (ok bool, val i
 			min = n
 		} else {
 			max = n
-			if math.Abs(max-min) < cfg.Epsilon {
+			if math.Abs(max-min) < (cfg.Epsilon / 10) {
 				return min
 			}
 		}

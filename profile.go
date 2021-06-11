@@ -40,6 +40,9 @@ type Parameter struct {
 
 // Solve will attempt to find a time-optimized solution to the given targets and constraints.
 func (cfg ProfileConfig) Solve() (Profile, error) {
+	if cfg.Epsilon == 0 {
+		cfg.Epsilon = 0.0001
+	}
 	for i, p := range cfg.Params[1:] {
 		if p.Start == p.Target {
 			continue

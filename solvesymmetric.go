@@ -92,7 +92,6 @@ func (cfg ProfileConfig) stateCmp(a, b interface{}) bool {
 
 func (cfg ProfileConfig) solveSymmetric() (Profile, error) {
 	base := make([]float64, 0, 1<<cfg.Order())
-	times := make([]float64, cfg.Order())
 	timeSlots := make([]float64, 0, 1<<cfg.Order())
 	p := make(Profile, 1, 1<<cfg.Order())
 	for _, param := range cfg.Params {
@@ -101,6 +100,7 @@ func (cfg ProfileConfig) solveSymmetric() (Profile, error) {
 
 	for order := 1; order <= cfg.Order(); order++ {
 		base := makeSymmetricBaseValues(base, order, cfg.Params[cfg.Order()].Max)
+		times := make([]float64, order)
 
 		calc := func() (bool, interface{}) {
 			timeSlots = makeSymmetricTimes(timeSlots, order, times)
@@ -121,12 +121,6 @@ func (cfg ProfileConfig) solveSymmetric() (Profile, error) {
 		}
 
 		doSearch := func(index int) bool {
-			if cfg.Params[index+1].Max == 0 {
-				times[cfg.Order()-index-1] = 0
-				calc()
-				return cfg.isExact(p)
-			}
-
 			times[index] = cfg.search(times[index], func(v float64) (bool, interface{}) {
 				times[index] = v
 				return calc()
@@ -137,7 +131,7 @@ func (cfg ProfileConfig) solveSymmetric() (Profile, error) {
 		}
 		var searchAll func(startIndex int) (bool, interface{})
 		searchAll = func(startIndex int) (bool, interface{}) {
-			if startIndex == cfg.Order() {
+			if startIndex == order {
 				return false, nil
 			}
 
@@ -147,7 +141,7 @@ func (cfg ProfileConfig) solveSymmetric() (Profile, error) {
 			}
 
 			for i := range times {
-				if !doSearch(cfg.Order() - i - 1) {
+				if !doSearch(order - i - 1) {
 					continue
 				}
 

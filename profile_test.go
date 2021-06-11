@@ -3,14 +3,17 @@ package motion
 import (
 	"fmt"
 	"log"
+	"math"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestProfile_Solve(t *testing.T) {
+	var cfg ProfileConfig
 
-	cfg := ProfileConfig{
+	cfg = ProfileConfig{
 		Epsilon: .01,
 		Params: []Parameter{
 			{Target: 10},
@@ -25,15 +28,27 @@ func TestProfile_Solve(t *testing.T) {
 	cfg = ProfileConfig{
 		Epsilon: .01,
 		Params: []Parameter{
-			{Target: 10},
-			{},
-			{Max: 2},
+			{Target: 10}, // 10 steps
+			{},           // no velocity config
+			{Max: 2},     // max accel 2
 		},
 	}
 
 	p, err = cfg.Solve()
 	assert.NoError(t, err)
 	assert.InDelta(t, 10, p.Last().Value(0), .01)
+
+	cfg = ProfileConfig{
+		Epsilon: 0.0001,
+		Params: []Parameter{
+			{Target: 100},
+			{},
+			{Max: 5},
+		},
+	}
+	p, err = cfg.Solve()
+	require.NoError(t, err)
+	assert.InDelta(t, 100, p.Last().Value(0), 0.0001)
 }
 
 func ExampleProfile() {
@@ -51,6 +66,6 @@ func ExampleProfile() {
 		log.Fatal(err)
 	}
 
-	fmt.Println(p.Duration())
-	// output: 2h
+	fmt.Println(math.Round(p.Duration()))
+	// output: 2
 }
