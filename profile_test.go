@@ -49,6 +49,87 @@ func TestProfile_Solve(t *testing.T) {
 	p, err = cfg.Solve()
 	require.NoError(t, err)
 	assert.InDelta(t, 100, p.Last().Value(0), 0.0001)
+
+	// Time based
+
+	cfg = ProfileConfig{
+		Epsilon: 0.0001,
+		Params: []Parameter{
+			{Target: 100},
+			{},
+		},
+		TargetT: 1000,
+	}
+	p, err = cfg.Solve()
+	require.NoError(t, err)
+	assert.InDelta(t, 100, p.Last().Value(0), 0.001)
+	assert.InDelta(t, 1000, p.Duration(), 0.001)
+
+	cfg = ProfileConfig{
+		Epsilon: 0.001,
+		Params: []Parameter{
+			{Target: 100},
+			{}, {},
+		},
+		TargetT: 1000,
+	}
+	p, err = cfg.Solve()
+	require.NoError(t, err)
+	assert.InDelta(t, 100, p.Last().Value(0), 0.001)
+	assert.InDelta(t, 1000, p.Duration(), 0.001)
+
+	cfg = ProfileConfig{
+		Epsilon: 0.0001,
+		Params: []Parameter{
+			{Target: 100},
+			{}, {}, {},
+		},
+		TargetT: 1000,
+	}
+	p, err = cfg.Solve()
+	require.NoError(t, err)
+	assert.InDelta(t, 100, p.Last().Value(0), 0.001)
+	assert.InDelta(t, 1000, p.Duration(), 0.001)
+
+	cfg = ProfileConfig{
+		Epsilon: 0.0001,
+		Params: []Parameter{
+			{Target: 100},
+			{}, {}, {}, {},
+		},
+		TargetT: 1000,
+	}
+	p, err = cfg.Solve()
+	require.NoError(t, err)
+	assert.InDelta(t, 100, p.Last().Value(0), 0.001)
+	assert.InDelta(t, 1000, p.Duration(), 0.001)
+
+	cfg = ProfileConfig{
+		Epsilon: 0.0001,
+		Params: []Parameter{
+			{Target: 100},
+			{}, {}, {}, {}, {},
+		},
+		TargetT: 1000,
+	}
+	p, err = cfg.Solve()
+	require.NoError(t, err)
+	assert.InDelta(t, 100, p.Last().Value(0), 0.001)
+	assert.InDelta(t, 1000, p.Duration(), 0.001)
+
+	cfg = ProfileConfig{
+		Epsilon: 0.0001,
+		Params: []Parameter{
+			{Target: 100},
+			{}, {}, {}, {}, {}, {},
+		},
+		TargetT: 1000,
+	}
+	p, err = cfg.Solve()
+	require.NoError(t, err)
+	assert.InDelta(t, 100, p.Last().Value(0), 0.001)
+	assert.InDelta(t, 1000, p.Duration(), 0.001)
+
 }
 
 func ExampleProfile() {
