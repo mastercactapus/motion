@@ -22,6 +22,8 @@ func main() {
 	maxPop := flag.Float64("pop", 0, "Max pop.")
 	ep := flag.Float64("e", .0001, "Allowable error.")
 	t := flag.Float64("t", .001, "Time interval.")
+	dur := flag.Float64("dur", 0, "Calculate move to fill timeframe.")
+	ord := flag.Int("order", 6, "Order of motion planning.")
 	flag.Parse()
 
 	cfg := motion.ProfileConfig{
@@ -32,14 +34,10 @@ func main() {
 		},
 	}
 	orders := []float64{*maxAcc, *maxJer, *maxSna, *maxCra, *maxPop}
-	for i, ov := range orders {
-		for _, v := range orders[i:] {
-			if v > 0 {
-				cfg.Params = append(cfg.Params, motion.Parameter{Max: ov})
-				break
-			}
-		}
+	for _, ov := range orders[:*ord-1] {
+		cfg.Params = append(cfg.Params, motion.Parameter{Max: ov})
 	}
+	cfg.TargetT = *dur
 
 	p, err := cfg.Solve()
 	if err != nil {

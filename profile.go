@@ -27,6 +27,7 @@ func (p Profile) First() State { return p[0] }
 
 type ProfileConfig struct {
 	Epsilon float64
+	TargetT float64
 	Params  []Parameter
 }
 
@@ -51,9 +52,31 @@ func (cfg ProfileConfig) Solve() (Profile, error) {
 		return nil, fmt.Errorf("param[%d]: asymmetric profiles not yet supported (Start != Target)", i)
 	}
 
-	if cfg.Params[len(cfg.Params)-1].Max == 0 {
-		return nil, fmt.Errorf("param[%d]: final parameter must include Max value", len(cfg.Params)-1)
+	baseMax := cfg.Params[len(cfg.Params)-1].Max
+	if baseMax == 0 && cfg.TargetT == 0 {
+		return nil, fmt.Errorf("param[%d]: final parameter must include Max value or TargetT must be specified", len(cfg.Params)-1)
 	}
+
+	if cfg.TargetT == 0 {
+		return cfg.solveSymmetric()
+	}
+
+	last := len(cfg.Params) - 1
+	cfg.Params[last].Max = cfg.search(0, func(maxVal float64) (bool, interface{}) {
+		cfg.Params[last].Max = maxVal
+		prof, err := cfg.solveSymmetric()
+		if err != nil {
+			return false, nil
+		}
+
+		return !cfg.gt(cfg.TargetT, prof.Duration()), prof
+	}, func(a, b interface{}) bool {
+		if a == nil || b == nil {
+			return false
+		}
+
+		return cfg.equal(a.(Profile).Duration(), b.(Profile).Duration())
+	})
 
 	return cfg.solveSymmetric()
 }
